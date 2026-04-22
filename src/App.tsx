@@ -3,7 +3,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { 
   Timer, 
   Users, 
@@ -68,11 +68,30 @@ const leaderboard = [
 
 export default function App() {
   const [currentScreen, setCurrentScreen] = useState<Screen>('challenge');
-  const [bingoState, setBingoState] = useState<BingoItem[]>(bingoData);
-  const [records, setRecords] = useState<MissionRecord[]>([]);
+  
+  // Initialize state from localStorage
+  const [bingoState, setBingoState] = useState<BingoItem[]>(() => {
+    const saved = localStorage.getItem('bingoState');
+    return saved ? JSON.parse(saved) : bingoData;
+  });
+  
+  const [records, setRecords] = useState<MissionRecord[]>(() => {
+    const saved = localStorage.getItem('missionRecords');
+    return saved ? JSON.parse(saved) : [];
+  });
+
   const [selectedMission, setSelectedMission] = useState<number>(1);
   const [verificationDate, setVerificationDate] = useState<string>(new Date().toISOString().split('T')[0]);
   const [verificationNotes, setVerificationNotes] = useState<string>('');
+
+  // Persist state to localStorage on changes
+  useEffect(() => {
+    localStorage.setItem('bingoState', JSON.stringify(bingoState));
+  }, [bingoState]);
+
+  useEffect(() => {
+    localStorage.setItem('missionRecords', JSON.stringify(records));
+  }, [records]);
 
   const handleOpenVerification = (id?: number) => {
     if (id) setSelectedMission(id);
