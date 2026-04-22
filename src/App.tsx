@@ -66,6 +66,25 @@ const leaderboard = [
   { rank: 3, name: 'Mark Miles', tier: 'Active Tier', bingo: 0, missions: 0, avatar: 'https://picsum.photos/seed/mark/100/100' },
 ];
 
+const calculateBingos = (state: BingoItem[]) => {
+  let count = 0;
+  const lines = [
+    // 가로
+    [0, 1, 2], [3, 4, 5], [6, 7, 8],
+    // 세로
+    [0, 3, 6], [1, 4, 7], [2, 5, 8],
+    // 대각선
+    [0, 4, 8], [2, 4, 6]
+  ];
+  
+  for (const line of lines) {
+    if (state[line[0]]?.done && state[line[1]]?.done && state[line[2]]?.done) {
+      count++;
+    }
+  }
+  return count;
+};
+
 export default function App() {
   const [currentScreen, setCurrentScreen] = useState<Screen>('challenge');
   
@@ -200,7 +219,7 @@ export default function App() {
                   <div className="flex justify-between items-center mb-10">
                     <h2 className="text-xl font-bold">Your Bingo Card</h2>
                     <span className="bg-primary-container text-on-primary-container px-4 py-1.5 rounded-full text-sm font-bold">
-                      {bingoState.filter(b => b.done && !b.special).length >= 3 ? '1' : '0'} Bingos • {bingoState.filter(b => b.done).length} Missions
+                      {calculateBingos(bingoState)} Bingos • {bingoState.filter(b => b.done).length} Missions
                     </span>
                   </div>
                   <div className="grid grid-cols-3 gap-8">
