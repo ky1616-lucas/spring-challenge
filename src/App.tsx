@@ -212,32 +212,46 @@ export default function App() {
   useEffect(() => {
     if (currentScreen === 'analytics') {
       const fetchLeaderboard = async () => {
-        const { data } = await supabase
-          .from('runner_profiles')
-          .select('*')
-          .order('bingo_count', { ascending: false })
-          .order('mission_count', { ascending: false })
-          .limit(20);
-        if (data) {
-          const leaderboard = data.map((d) => {
-            // Standard Competition Ranking (1, 1, 3, 4)
-            // Find the index of the FIRST person who has the same scores
-            const firstSameScoreIndex = data.findIndex(other => 
-              Number(other.bingo_count || 0) === Number(d.bingo_count || 0) && 
-              Number(other.mission_count || 0) === Number(d.mission_count || 0)
-            );
-            const currentRank = firstSameScoreIndex + 1;
+        try {
+          const { data, error } = await supabase
+            .from('runner_profiles')
+            .select('*')
+            .order('bingo_count', { ascending: false })
+            .order('mission_count', { ascending: false })
+            .limit(20);
+          
+          if (error) {
+            console.error('Supabase Error:', error);
+            return;
+          }
 
-            return {
-               rank: currentRank,
-               name: d.nickname,
-               bingo: d.bingo_count || 0,
-               missions: d.mission_count || 0,
-               avatar: d.avatar_url,
-               tier: (d.bingo_count || 0) >= 3 ? 'Elite Tier' : ((d.bingo_count || 0) >= 1 ? 'Pro Tier' : 'Active Tier')
-            };
-          });
-          setGlobalLeaderboard(leaderboard);
+          if (data) {
+            console.log('Leaderboard Data:', data.length, 'records found');
+            let currentRank = 1;
+            const leaderboard = data.map((d, index) => {
+              if (index > 0) {
+                const prev = data[index - 1];
+                const isTie = Number(d.bingo_count || 0) === Number(prev.bingo_count || 0) && 
+                              Number(d.mission_count || 0) === Number(prev.mission_count || 0);
+                if (!isTie) {
+                  currentRank = index + 1;
+                }
+              }
+              return {
+                 rank: currentRank,
+                 name: d.nickname,
+                 bingo: d.bingo_count || 0,
+                 missions: d.mission_count || 0,
+                 avatar: d.avatar_url,
+                 tier: (d.bingo_count || 0) >= 3 ? 'Elite Tier' : ((d.bingo_count || 0) >= 1 ? 'Pro Tier' : 'Active Tier')
+              };
+            });
+            setGlobalLeaderboard(leaderboard);
+          } else {
+            setGlobalLeaderboard([]);
+          }
+        } catch (err) {
+          console.error('Fetch Error:', err);
         }
       };
       fetchLeaderboard();
