@@ -222,7 +222,7 @@ export default function App() {
                       {calculateBingos(bingoState)} Bingos • {bingoState.filter(b => b.done).length} Missions
                     </span>
                   </div>
-                  <div className="grid grid-cols-3 gap-8">
+                  <div className="grid grid-cols-3 gap-3 sm:gap-8">
                     {bingoState.map((item) => (
                       <motion.div
                         key={item.id}
@@ -230,24 +230,26 @@ export default function App() {
                         whileTap={{ scale: 0.97 }}
                         onClick={item.done ? undefined : () => handleOpenVerification(item.id)}
                         className={`
-                          relative aspect-square rounded-3xl flex flex-col items-center justify-center p-6 text-center border-3 transition-all
+                          relative aspect-square rounded-2xl sm:rounded-3xl flex flex-col items-center justify-center p-2 sm:p-6 text-center border-[2px] sm:border-3 transition-all
                           ${item.special ? 'bg-primary border-primary text-white shadow-2xl shadow-primary/30' : 'bg-surface border-on-surface text-on-surface hover:shadow-lg'}
                           ${!item.done && !item.special ? 'cursor-pointer hover:border-blue-500' : ''}
+                          overflow-hidden
                         `}
                       >
-                        <span className="text-xs font-bold leading-tight uppercase opacity-70 mb-2">{item.label}</span>
-                        <span className={`text-xl md:text-2xl font-black leading-tight ${item.special ? 'text-white' : 'text-on-surface'}`}>
+                        <span className="text-[9px] sm:text-xs font-bold leading-tight uppercase opacity-70 mb-1 sm:mb-2">{item.label}</span>
+                        <span className={`text-sm sm:text-xl md:text-2xl font-black leading-tight break-keep ${item.special ? 'text-white' : 'text-on-surface'}`}>
                           {item.subLabel}
                         </span>
                         
                         {item.done && (
-                          <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
+                          <div className="absolute inset-0 flex items-center justify-center pointer-events-none bg-background/20 backdrop-blur-[1px] rounded-2xl sm:rounded-3xl">
                             <div className={`
-                              border-5 px-3 py-1.5 rounded-xl text-center animate-stamp
+                              border-[3px] sm:border-5 px-2 py-1 sm:px-3 sm:py-1.5 rounded-lg sm:rounded-xl text-center animate-stamp
                               ${item.special ? 'border-white text-white' : 'border-secondary text-secondary'}
+                              bg-surface/80 sm:bg-transparent
                             `}>
-                              <div className="text-[10px] font-black uppercase tracking-tighter leading-none mb-1">Clear</div>
-                              <div className="text-[8px] font-bold opacity-80 leading-none">{item.clearDate}</div>
+                              <div className="text-[10px] sm:text-[10px] font-black uppercase tracking-tighter leading-none mb-1">Clear</div>
+                              <div className="text-[7px] sm:text-[8px] font-bold opacity-80 leading-none">{item.clearDate}</div>
                             </div>
                           </div>
                         )}
