@@ -60,11 +60,7 @@ const bingoData: BingoItem[] = [
   { id: 9, label: '미리내', subLabel: '5km', icon: ArrowRightLeft, done: false },
 ];
 
-const leaderboard = [
-  { rank: 1, name: 'Alex Runner', tier: 'Elite Tier', bingo: 0, missions: 0, avatar: 'https://picsum.photos/seed/alex/100/100' },
-  { rank: 2, name: 'Sarah Swift', tier: 'Pro Tier', bingo: 0, missions: 0, avatar: 'https://picsum.photos/seed/sarah/100/100' },
-  { rank: 3, name: 'Mark Miles', tier: 'Active Tier', bingo: 0, missions: 0, avatar: 'https://picsum.photos/seed/mark/100/100' },
-];
+import { supabase } from './lib/supabase';
 
 const calculateBingos = (state: BingoItem[]) => {
   let count = 0;
@@ -87,7 +83,11 @@ const calculateBingos = (state: BingoItem[]) => {
 
 export default function App() {
   const [currentScreen, setCurrentScreen] = useState<Screen>('challenge');
-  
+  const [runnerName, setRunnerName] = useState<string>(() => localStorage.getItem('runnerName') || '');
+  const [showNamePrompt, setShowNamePrompt] = useState<boolean>(!localStorage.getItem('runnerName'));
+  const [tempName, setTempName] = useState('');
+  const [globalLeaderboard, setGlobalLeaderboard] = useState<any[]>([]);
+
   // Initialize state from localStorage
   const [bingoState, setBingoState] = useState<BingoItem[]>(() => {
     const saved = localStorage.getItem('bingoState');
@@ -112,16 +112,58 @@ export default function App() {
     localStorage.setItem('missionRecords', JSON.stringify(records));
   }, [records]);
 
+  useEffect(() => {
+    if (currentScreen === 'analytics') {
+      const fetchLeaderboard = async () => {
+        const { data } = await supabase
+          .from('runner_profiles')
+          .select('*')
+          .order('bingo_count', { ascending: false })
+          .order('mission_count', { ascending: false })
+          .limit(20);
+        if (data) {
+          setGlobalLeaderboard(data.map((d, index) => ({
+             rank: index + 1,
+             name: d.nickname,
+             bingo: d.bingo_count,
+             missions: d.mission_count,
+             avatar: d.avatar_url,
+             tier: d.bingo_count >= 3 ? 'Elite Tier' : (d.bingo_count >= 1 ? 'Pro Tier' : 'Active Tier')
+          })));
+        }
+      };
+      fetchLeaderboard();
+    }
+  }, [currentScreen]);
+
+  const handleSaveName = async () => {
+    if (!tempName.trim()) return;
+    const name = tempName.trim();
+    setRunnerName(name);
+    localStorage.setItem('runnerName', name);
+    setShowNamePrompt(false);
+    
+    const bingos = calculateBingos(bingoState);
+    const missions = bingoState.filter(b => b.done).length;
+    await supabase.from('runner_profiles').upsert({
+      nickname: name,
+      bingo_count: bingos,
+      mission_count: missions,
+      avatar_url: `https://api.dicebear.com/7.x/avataaars/svg?seed=${name}`
+    });
+  };
+
   const handleOpenVerification = (id?: number) => {
     if (id) setSelectedMission(id);
     setCurrentScreen('verification');
   };
   const handleGoBack = () => setCurrentScreen('challenge');
 
-  const handleSubmitVerification = () => {
-    setBingoState(prev => prev.map(item => 
+  const handleSubmitVerification = async () => {
+    const newState = bingoState.map(item => 
       item.id === selectedMission ? { ...item, done: true, clearDate: verificationDate } : item
-    ));
+    );
+    setBingoState(newState);
     
     const mission = bingoState.find(b => b.id === selectedMission);
     if (mission) {
@@ -134,6 +176,17 @@ export default function App() {
       };
       setRecords(prev => [newRecord, ...prev]);
     }
+
+    if (runnerName) {
+      const bingos = calculateBingos(newState);
+      const missionsCount = newState.filter(b => b.done).length;
+      await supabase.from('runner_profiles').upsert({
+        nickname: runnerName,
+        bingo_count: bingos,
+        mission_count: missionsCount,
+        avatar_url: `https://api.dicebear.com/7.x/avataaars/svg?seed=${runnerName}`
+      });
+    }
     
     setVerificationNotes('');
     setCurrentScreen('challenge');
@@ -143,6 +196,28 @@ export default function App() {
 
   return (
     <div className="flex h-screen bg-background overflow-hidden font-sans">
+      {showNamePrompt && (
+        <div className="fixed inset-0 bg-black/60 z-50 flex items-center justify-center p-4">
+          <div className="bg-surface p-8 rounded-3xl max-w-md w-full shadow-2xl">
+            <h2 className="text-2xl font-black mb-2">Welcome to Spring Challenge!</h2>
+            <p className="text-on-surface-variant mb-6 text-sm">Please enter a nickname to join the global leaderboard.</p>
+            <input 
+              type="text" 
+              value={tempName}
+              onChange={(e) => setTempName(e.target.value)}
+              placeholder="e.g. Runner123"
+              className="w-full bg-background border border-outline rounded-xl p-4 mb-4 text-lg font-bold focus:ring-2 focus:ring-primary/20 focus:outline-none"
+            />
+            <button 
+              onClick={handleSaveName}
+              className="w-full bg-primary text-white py-4 rounded-xl font-black text-lg shadow-lg hover:bg-primary-dim transition-all active:scale-95"
+            >
+              Start Running
+            </button>
+          </div>
+        </div>
+      )}
+
       {/* Sidebar - desktop only for now as per theme pattern */}
       <aside className="w-60 bg-surface border-r border-outline flex flex-col p-6 hidden md:flex">
         <div className="w-10 h-10 bg-primary rounded-lg mb-12 flex items-center justify-center text-white font-bold text-xl">
@@ -176,11 +251,15 @@ export default function App() {
           </div>
           <div className="flex items-center gap-5">
             <div className="text-right hidden sm:block">
-              <div className="text-sm font-semibold text-on-surface">Alex Runner</div>
-              <div className="text-xs text-on-surface-variant italic">Elite Access</div>
+              <div className="text-sm font-semibold text-on-surface">{runnerName || 'Guest'}</div>
+              <div className="text-xs text-on-surface-variant italic">Active Runner</div>
             </div>
-            <div className="w-10 h-10 rounded-lg bg-primary flex items-center justify-center text-white">
-              <User className="w-6 h-6" />
+            <div className="w-10 h-10 rounded-lg bg-primary flex items-center justify-center text-white overflow-hidden">
+               {runnerName ? (
+                 <img src={`https://api.dicebear.com/7.x/avataaars/svg?seed=${runnerName}`} alt="avatar" className="w-full h-full object-cover" />
+               ) : (
+                 <User className="w-6 h-6" />
+               )}
             </div>
           </div>
         </header>
@@ -295,8 +374,8 @@ export default function App() {
                       <div className="col-span-3">Status</div>
                       <div className="col-span-2 text-right">Progress</div>
                     </div>
-                    {leaderboard.map((user) => (
-                      <div key={user.rank} className="grid grid-cols-12 px-8 py-6 items-center hover:bg-background/20 transition-colors">
+                    {globalLeaderboard.length > 0 ? globalLeaderboard.map((user) => (
+                      <div key={user.name} className="grid grid-cols-12 px-8 py-6 items-center hover:bg-background/20 transition-colors">
                         <div className="col-span-1 font-black text-on-surface-variant text-lg">#{user.rank}</div>
                         <div className="col-span-6 flex items-center gap-3">
                           <img 
@@ -320,7 +399,11 @@ export default function App() {
                           <div className="text-[10px] text-on-surface-variant">{user.missions} Mission</div>
                         </div>
                       </div>
-                    ))}
+                    )) : (
+                      <div className="text-center py-10 text-sm font-bold text-on-surface-variant opacity-70">
+                        Loading leaderboard...
+                      </div>
+                    )}
                   </div>
                 </section>
               </motion.div>
