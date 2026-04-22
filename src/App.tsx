@@ -49,11 +49,11 @@ interface MissionRecord {
 }
 
 const bingoData: BingoItem[] = [
-  { id: 1, label: '원주천', subLabel: '씨쏘베이글런 8km', icon: Timer, done: true, clearDate: '2026-04-15' },
+  { id: 1, label: '원주천', subLabel: '씨쏘베이글런 8km', icon: Timer, done: false },
   { id: 2, label: '바람길숲', subLabel: '10km', icon: Trees, done: false },
-  { id: 3, label: '중앙공원', subLabel: '트레일러닝 6km', icon: Mountain, done: true, clearDate: '2026-04-18' },
+  { id: 3, label: '중앙공원', subLabel: '트레일러닝 6km', icon: Mountain, done: false },
   { id: 4, label: '종합운동장', subLabel: '15km', icon: LayoutGrid, done: false },
-  { id: 5, label: '종합운동장', subLabel: '10km', icon: Star, done: true, special: true, clearDate: '2026-04-20' },
+  { id: 5, label: '종합운동장', subLabel: '10km', icon: Star, done: false, special: true },
   { id: 6, label: '국형사-한가터', subLabel: '트레일러닝 6km', icon: Share2, done: false },
   { id: 7, label: '(정상석 인증)', subLabel: '등산', icon: Mountain, done: false },
   { id: 8, label: '원주천', subLabel: '새벽시장런 8km', icon: Moon, done: false },
@@ -61,20 +61,16 @@ const bingoData: BingoItem[] = [
 ];
 
 const leaderboard = [
-  { rank: 1, name: 'Alex Runner', tier: 'Elite Tier', bingo: 3, missions: 8, avatar: 'https://picsum.photos/seed/alex/100/100' },
-  { rank: 2, name: 'Sarah Swift', tier: 'Pro Tier', bingo: 2, missions: 9, avatar: 'https://picsum.photos/seed/sarah/100/100' },
-  { rank: 3, name: 'Mark Miles', tier: 'Active Tier', bingo: 2, missions: 5, avatar: 'https://picsum.photos/seed/mark/100/100' },
+  { rank: 1, name: 'Alex Runner', tier: 'Elite Tier', bingo: 0, missions: 0, avatar: 'https://picsum.photos/seed/alex/100/100' },
+  { rank: 2, name: 'Sarah Swift', tier: 'Pro Tier', bingo: 0, missions: 0, avatar: 'https://picsum.photos/seed/sarah/100/100' },
+  { rank: 3, name: 'Mark Miles', tier: 'Active Tier', bingo: 0, missions: 0, avatar: 'https://picsum.photos/seed/mark/100/100' },
 ];
 
 export default function App() {
   const [currentScreen, setCurrentScreen] = useState<Screen>('challenge');
   const [bingoState, setBingoState] = useState<BingoItem[]>(bingoData);
-  const [records, setRecords] = useState<MissionRecord[]>([
-    { id: '1', missionId: 1, missionName: '원주천 씨쏘베이글런 8km', date: '2026-04-15', notes: 'Great morning run!' },
-    { id: '2', missionId: 3, missionName: '중앙공원 트레일러닝 6km', date: '2026-04-18', notes: 'Elevation was tough.' },
-    { id: '3', missionId: 5, missionName: '종합운동장 10km', date: '2026-04-20', notes: 'Completed the peak challenge.' },
-  ]);
-  const [selectedMission, setSelectedMission] = useState<number>(bingoState.find(b => !b.done)?.id || 1);
+  const [records, setRecords] = useState<MissionRecord[]>([]);
+  const [selectedMission, setSelectedMission] = useState<number>(1);
   const [verificationDate, setVerificationDate] = useState<string>(new Date().toISOString().split('T')[0]);
   const [verificationNotes, setVerificationNotes] = useState<string>('');
 
